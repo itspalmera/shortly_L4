@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram - URL Management Service
+
+Container_Boundary(url_service_boundary, "URL Management Service") {
+    Component(url_controller, "URL Endpoints / Controller", "ASP.NET Core Minimal API", "Exposes REST endpoints for POST /api/urls, GET /api/urls, DELETE /api/urls/{id}.")
+    Component(command_handler, "Create / Delete Command Handlers", "C# CQRS", "Processes URL creation requests and enforces business validation.")
+    Component(query_handler, "Get / List Query Handlers", "C# CQRS", "Fetches URL details and list representations.")
+    Component(ulid_generator, "ULID Generator Service", "C# / Ulid Library", "Generates irreversible, URL-safe 12-character unique identifiers.")
+    Component(url_repository, "URL Repository", "EF Core Repository", "Encapsulates data persistence operations for the URL write model.")
+    Component(cache_publisher, "Cache Sync Event Handler", "C# MediatR Handler", "Pushes newly created links directly into Redis cache.")
+}
+
+ContainerDb(url_db, "URL Database", "PostgreSQL", "Stores URL mapping records.")
+ContainerDb(redis_cache, "Redis Cache", "Redis", "Caches short link mappings.")
+Container(api_gateway, "API Gateway", "YARP", "Routes requests.")
+
+Rel(api_gateway, url_controller, "Invokes API operations", "HTTP/JSON")
+Rel(url_controller, command_handler, "Dispatches commands", "In-Process Call")
+Rel(url_controller, query_handler, "Dispatches queries", "In-Process Call")
+
+Rel(command_handler, ulid_generator, "Requests unique short code", "In-Process Call")
+Rel(command_handler, url_repository, "Saves new Link entity", "In-Process Call")
+Rel(command_handler, cache_publisher, "Emits LinkCreatedEvent", "In-Process Call")
+
+Rel(query_handler, url_repository, "Queries URL data", "In-Process Call")
+Rel(url_repository, url_db, "Reads/Writes entities", "SQL / Npgsql")
+Rel(cache_publisher, redis_cache, "Sets key: shortUrl -> longUrl", "RESP Protocol")
+
+@enduml

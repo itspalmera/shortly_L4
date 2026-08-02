@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram - Redirect Service
+
+Container_Boundary(redirect_service_boundary, "Redirect Service") {
+    Component(redirect_endpoint, "Redirect Endpoint", "ASP.NET Core Minimal API", "Handles incoming GET /{shortUrl} requests with ultra-low latency.")
+    Component(cache_manager, "Redis Cache Client", "StackExchange.Redis", "Fetches destination URL from Redis key-value store.")
+    Component(fallback_service, "DB Fallback Service", "C# Service", "Queries read-replica DB when Redis cache experiences a miss.")
+    Component(async_publisher, "Click Event Publisher", "RabbitMQ Client", "Publishes non-blocking LinkVisitedEvent messages to message broker.")
+}
+
+ContainerDb(redis_cache, "Redis Cache", "Redis", "High-speed key-value cache.")
+ContainerDb(url_db_replica, "URL DB Read Replica", "PostgreSQL", "Read-only database replica.")
+ContainerQueue(message_broker, "Message Broker", "RabbitMQ", "Event bus.")
+
+Rel(redirect_endpoint, cache_manager, "Checks cached shortUrl", "In-Process Call")
+Rel(cache_manager, redis_cache, "GET shortUrl", "RESP Protocol")
+
+Rel(redirect_endpoint, fallback_service, "Triggers on cache miss", "In-Process Call")
+Rel(fallback_service, url_db_replica, "SELECT Url FROM links WHERE ShortUrl = @code", "SQL")
+
+Rel(redirect_endpoint, async_publisher, "Dispatches visit event asynchronously", "Fire & Forget Task")
+Rel(async_publisher, message_broker, "Publishes LinkVisitedEvent", "AMQP")
+
+@enduml
