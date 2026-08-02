@@ -1,0 +1,23 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram for Shortly Platform
+
+Person(end_user, "End User / Visitor", "Users who access short URLs to be redirected to target websites.")
+Person(registered_user, "Registered User", "Creates short links, manages existing links, and views click statistics.")
+Person(admin, "System Administrator", "Monitors platform health, manages system configurations and user accounts.")
+
+System(shortly_system, "Shortly Platform", "Provides high-performance URL shortening, fast redirection, and click analytics.")
+
+System_Ext(target_websites, "Destination Web Servers", "External websites where visitors are redirected.")
+System_Ext(telemetry_system, "Monitoring & Telemetry System", "Grafana / Prometheus for metrics, traces, and alert management.")
+
+Rel(end_user, shortly_system, "Accesses short links", "HTTP/HTTPS GET /{shortUrl}")
+Rel(registered_user, shortly_system, "Creates links & views metrics", "HTTP/HTTPS REST API / Web App")
+Rel(admin, shortly_system, "Monitors health & manages platform", "HTTP/HTTPS / Health Probes")
+Rel(shortly_system, target_websites, "Redirects users to", "HTTP 301/302/307 Redirect")
+Rel(shortly_system, telemetry_system, "Sends metrics, logs, and traces", "OpenTelemetry / OTLP")
+
+@enduml
