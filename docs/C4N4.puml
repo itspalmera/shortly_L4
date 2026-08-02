@@ -1,0 +1,60 @@
+@startuml
+skin rose
+left to right direction
+
+title Level 4 Code Diagram - Redirect Processing Engine
+
+package "Shortly.RedirectService.Domain" {
+    class ShortUrlLookupResult {
+        + OriginalUrl : string
+        + FoundInCache : bool
+        + IsActive : bool
+    }
+}
+
+package "Shortly.RedirectService.Infrastructure" {
+    interface ICacheManager {
+        + GetOriginalUrlAsync(shortUrl: string) : Task<string?>
+        + SetOriginalUrlAsync(shortUrl: string, originalUrl: string) : Task
+    }
+
+    interface IEventBus {
+        + PublishAsync<T>(eventMessage: T) : Task
+    }
+
+    class RedisCacheManager implements ICacheManager {
+        - _redisDb : IDatabase
+        + GetOriginalUrlAsync(shortUrl: string) : Task<string?>
+        + SetOriginalUrlAsync(shortUrl: string, originalUrl: string) : Task
+    }
+
+    class RabbitMqEventBus implements IEventBus {
+        - _channel : IModel
+        + PublishAsync<T>(eventMessage: T) : Task
+    }
+}
+
+package "Shortly.RedirectService.Application" {
+    class RedirectResolver {
+        - _cache : ICacheManager
+        - _fallbackRepo : IUrlReadRepository
+        - _eventBus : IEventBus
+        - _logger : ILogger<RedirectResolver>
+        + RedirectResolver(cache, fallbackRepo, eventBus, logger)
+        + ResolveAndTrackAsync(shortUrl: string, userAgent: string, ipAddress: string) : Task<ShortUrlLookupResult>
+    }
+
+    class LinkVisitedEvent {
+        + ShortUrl : string
+        + Timestamp : DateTime
+        + UserAgent : string
+        + IpAddress : string
+    }
+}
+
+RedirectResolver --> ICacheManager
+RedirectResolver --> IEventBus
+RedirectResolver ..> ShortUrlLookupResult
+RedirectResolver ..> LinkVisitedEvent
+
+@enduml
