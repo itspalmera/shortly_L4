@@ -1,0 +1,47 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram for Shortly Microservices Architecture
+
+Person(user, "User / Client", "Web Browser, Mobile Client or API Consumer.")
+
+System_Boundary(shortly_boundary, "Shortly System Boundary") {
+    Container(api_gateway, "API Gateway", "YARP / ASP.NET Core", "Single entry point, request routing, rate limiting, SSL termination, JWT validation.")
+    
+    Container(identity_service, "Identity Service", ".NET 10 Web API", "Handles user registration, authentication, JWT generation, and password hashing.")
+    ContainerDb(identity_db, "Identity DB", "PostgreSQL", "Stores user profiles and credentials.")
+
+    Container(url_service, "URL Management Service", ".NET 10 Web API", "Handles creation, listing, updating, and deletion of shortened URLs using ULID tokens.")
+    ContainerDb(url_db, "URL DB", "PostgreSQL", "Stores original URLs, short codes, ownership, and metadata.")
+
+    Container(redirect_service, "Redirect Service", ".NET 10 Web API / Go", "High-throughput edge service for GET /{shortUrl} redirects with minimal latency.")
+    ContainerDb(cache, "URL Cache", "Redis Cluster", "Caches active shortUrl -> originalUrl mappings for sub-millisecond response times.")
+
+    Container(stats_service, "Stats Service", ".NET 10 Worker / Web API", "Consumes click events asynchronously and computes click analytics.")
+    ContainerDb(stats_db, "Stats DB", "ClickHouse / PostgreSQL", "Stores raw click events, geographic data, and aggregated counter stats.")
+
+    ContainerQueue(message_broker, "Message Broker", "RabbitMQ / Apache Kafka", "Asynchronous event bus for decoupling click tracking from low-latency redirects.")
+}
+
+Rel(user, api_gateway, "Sends API calls & visits links", "HTTPS / REST")
+
+Rel(api_gateway, identity_service, "Routes auth requests", "gRPC / HTTP REST")
+Rel(identity_service, identity_db, "Reads/Writes user data", "EF Core / Npgsql")
+
+Rel(api_gateway, url_service, "Routes URL management requests", "HTTP REST")
+Rel(url_service, url_db, "Reads/Writes URL mapping data", "EF Core / Npgsql")
+Rel(url_service, cache, "Invalidates/Updates cached URLs", "RESP Protocol")
+
+Rel(api_gateway, redirect_service, "Routes redirect traffic", "HTTP REST")
+Rel(redirect_service, cache, "Looks up short code", "RESP Protocol")
+Rel(redirect_service, url_db, "Cache miss fallback read", "SQL / Npgsql")
+Rel(redirect_service, message_broker, "Publishes LinkVisitedEvent", "AMQP / Kafka Protocol")
+
+Rel(message_broker, stats_service, "Delivers click events", "AMQP / Kafka Consumer")
+Rel(stats_service, stats_db, "Persists aggregated metrics", "SQL / Bulk Insert")
+
+Rel(api_gateway, stats_service, "Routes statistics queries", "HTTP REST")
+
+@enduml
