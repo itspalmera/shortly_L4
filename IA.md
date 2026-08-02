@@ -1,10 +1,12 @@
-# Reporte de Uso de Inteligencia Artificial - Laboratorio 3
+# AI Prompts Report (IA.md)
 
-Durante el desarrollo del Laboratorio 3 de la asignatura Arquitecturas de Software (2026), se utilizó inteligencia artificial como herramienta de apoyo para resolver dudas técnicas, validar decisiones de diseño y verificar el cumplimiento de ciertos requisitos de la especificación. La implementación, integración y pruebas de la solución fueron realización propia
+**Project:** Shortly - Laboratory 4: Microservices Architecture with C4 Model  
+**Date:** July 2026  
 
-1. **Diseño de Content Negotiation Semántico:** Configuración de filtros nativos e inspección de cabeceras `Accept` para alternar la serialización entre `XmlSerializer` y respuestas de tipo `Results.Json`.
-2. **Cumplimiento de la especificación HTTP/REST:** Asegurar que los verbos GET, POST, y DELETE mapearan de forma exacta a los códigos de estado `200 OK`, `201 Created` (con header Location), `204 No Content` y `406 Not Acceptable`.
+Pursuant to the course evaluation requirements, the following table details all prompts submitted to AI tools during the architectural design and C4 model creation for Laboratory 4.
 
-## Prompts Utilizados
-* *"Analiza la estructura minimal api de .NET 10 y ve que cumpla con Content Negotiation manual inspeccionando HttpContext.Request.Headers.Accept para JSON y XML."*
-* *"¿Cómo retornar un error 406 Not Acceptable en Minimal APIs si el formato del header Accept no coincide con application/json ni application/xml?"*
+| # | Prompt Submitted | Target Section / Purpose | Output / Result Obtained |
+|---|------------------|---------------------------|--------------------------|
+| 1 | "Design a microservices decomposition for a URL shortener app written in .NET 10 (Shortly) separating write, redirect, and stats concerns." | Architecture & Decomposition Rationale | Defined 5 core services: API Gateway, Identity, URL Service, Redirect Service, and Stats Service. |
+
+| 2 | "Draft an architectural decision document covering data ownership, scalability, failure modes, and communication protocols for Shortly microservices." | `docs/architecture.md` | Formatted Markdown document covering service rationale, data consistency, Polly circuit breakers, and technology stack. |
